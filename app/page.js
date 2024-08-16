@@ -6,11 +6,13 @@ import {Box, Modal, Typography, Stack, TextField, Button, IconButton} from "@mui
 import {collection, query, getDocs, doc, deleteDoc, getDoc, setDoc} from "firebase/firestore";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import '@fontsource/roboto';
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
@@ -60,35 +62,153 @@ export default function Home() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  const filteredInventory = inventory.filter(({name}) => 
+    name.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
     <Box
       width="100vw"
       height="100vh"
       display="flex"
       flexDirection="column"
-      justifyContent="center"
+      justifyContent="space-between"
       alignItems="center"
-      gap={4}
       sx={{
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#212121",
         padding: 4,
+        fontFamily: "Roboto, sans-serif",
+        color: "#ffffff",
       }}
     >
-      <Typography variant="h2" gutterBottom>
-        Inventory Management
+      {/* Top Section: Title */}
+      <Typography variant="h3" gutterBottom color="#FF9800" align="center" sx={{ marginBottom: "2rem" }}>
+        Inventory Management Application
       </Typography>
-      
-      <Button variant="contained" color="primary" onClick={handleOpen} startIcon={<AddIcon />}>
+
+      {/* Middle Section: Inventory List */}
+      <Box width="800px" bgcolor="#333333" borderRadius={2} boxShadow={2} p={3} flexGrow={1} height="60vh" overflow="auto">
+        <Typography variant="h4" align="center" color="#FF9800" gutterBottom>
+          Inventory Items
+        </Typography>
+        <TextField
+          variant="outlined"
+          placeholder="Search Items..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{
+            bgcolor: "#333",  
+            borderRadius: 1,
+            borderColor: "orange",  
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": {
+                borderColor: "orange",
+              },
+              "&:hover fieldset": {
+                borderColor: "orange",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "orange",
+              },
+              "& input": {
+                color: "white",  
+              },
+              "& input::placeholder": {
+                color: "white",  
+              },
+            },
+            marginTop: 2,
+            marginBottom: 2, 
+            width: "100%",  
+          }}
+        />
+        <Stack spacing={2}>
+          {filteredInventory.length > 0 ? filteredInventory.map(({name, quantity}) => (
+            <Box
+              key={name}
+              p={2}
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              bgcolor="#424242"
+              borderRadius={2}
+              boxShadow={1}
+            >
+              <Typography variant="h6" color="#FF9800">
+                {name.charAt(0).toUpperCase() + name.slice(1)}
+              </Typography>
+              <Typography variant="h6" color="#FF9800">
+                {quantity}
+              </Typography>
+              <Stack direction="row" spacing={2}>
+                <IconButton
+                  sx={{
+                    backgroundColor: "#FF9800",
+                    color: "#212121",
+                    transition: "transform 0.2s, background-color 0.2s",
+                    '&:hover': {
+                      backgroundColor: "#ffffff",
+                      color: "#FF9800",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                  onClick={() => addItem(name)}
+                >
+                  <AddIcon />
+                </IconButton>
+                <IconButton
+                  sx={{
+                    backgroundColor: "#FF9800",
+                    color: "#212121",
+                    transition: "transform 0.2s, background-color 0.2s",
+                    '&:hover': {
+                      backgroundColor: "#ffffff",
+                      color: "#FF9800",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                  onClick={() => removeItem(name)}
+                >
+                  <RemoveIcon />
+                </IconButton>
+              </Stack>
+            </Box>
+          )): (
+            <Typography variant="h6" color="white" textAlign="center">
+              No items match your search.
+            </Typography>
+          )}
+        </Stack>
+      </Box>
+
+      {/* Bottom Section: Add New Item Button */}
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleOpen}
+        startIcon={<AddIcon />}
+        sx={{
+          backgroundColor: "#FF9800",
+          color: "#212121",
+          transition: "transform 0.2s, background-color 0.2s",
+          '&:hover': {
+            backgroundColor: "#ffffff",
+            color: "#FF9800",
+            transform: "scale(1.05)",
+          },
+          marginTop: "2rem",
+        }}
+      >
         Add New Item
       </Button>
 
+      {/* Modal for Adding Item */}
       <Modal open={open} onClose={handleClose}>
         <Box
           position="absolute"
           top="50%"
           left="50%"
           width={400}
-          bgcolor="white"
+          bgcolor="#ffffff"
           border="2px solid #000"
           boxShadow={24}
           p={4}
@@ -98,9 +218,10 @@ export default function Home() {
           sx={{
             transform: 'translate(-50%, -50%)',
             borderRadius: 2,
+            fontFamily: "Roboto, sans-serif",
           }}
         >
-          <Typography variant="h6">Add Item</Typography>
+          <Typography variant="h6" color="#FF9800">Add Item</Typography>
           <Stack direction="row" spacing={2}>
             <TextField
               variant="outlined"
@@ -110,11 +231,20 @@ export default function Home() {
             />
             <Button
               variant="contained"
-              color="primary"
               onClick={() => {
                 addItem(itemName);
                 setItemName('');
                 handleClose();
+              }}
+              sx={{
+                backgroundColor: "#FF9800",
+                color: "#212121",
+                transition: "transform 0.2s, background-color 0.2s",
+                '&:hover': {
+                  backgroundColor: "#ffffff",
+                  color: "#FF9800",
+                  transform: "scale(1.05)",
+                },
               }}
             >
               Add
@@ -122,47 +252,6 @@ export default function Home() {
           </Stack>
         </Box>
       </Modal>
-
-      <Box width="800px" bgcolor="#fff" borderRadius={2} boxShadow={2} p={3}>
-        <Typography variant="h4" align="center" color="primary" gutterBottom>
-          Inventory Items
-        </Typography>
-        <Stack spacing={2} overflow="auto">
-          {inventory.map(({name, quantity}) => (
-            <Box
-              key={name}
-              p={2}
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              bgcolor="#fafafa"
-              borderRadius={2}
-              boxShadow={1}
-            >
-              <Typography variant="h6">
-                {name.charAt(0).toUpperCase() + name.slice(1)}
-              </Typography>
-              <Typography variant="h6">
-                {quantity}
-              </Typography>
-              <Stack direction="row" spacing={2}>
-                <IconButton
-                  color="primary"
-                  onClick={() => addItem(name)}
-                >
-                  <AddIcon />
-                </IconButton>
-                <IconButton
-                  color="secondary"
-                  onClick={() => removeItem(name)}
-                >
-                  <RemoveIcon />
-                </IconButton>
-              </Stack>
-            </Box>
-          ))}
-        </Stack>
-      </Box>
     </Box>
   );
 }
